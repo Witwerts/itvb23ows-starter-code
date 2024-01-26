@@ -1,0 +1,14 @@
+git:latest
+pipeline-github-lib:latest
+pipeline-stage-view:latest
+subversion:latest
+matrix-auth:latest
+role-strategy:latest
+build-timeout:latest
+credentials-binding:latest
+mailer:latest
+nodejs:latest
+docker-plugin:latest
+junit:latest
+ws-cleanup:latest
+greenballs:latest

@@ -1,0 +1,33 @@
+services:
+  php-container:
+    build: ./main/
+    container_name: php-app
+    ports:
+      - "8000:80"
+
+  db-container:
+    build: ./db/
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: yes
+      MYSQL_DATABASE: "hive"
+    ports:
+      - "3306:3306"
+
+  jenkins:
+    build: ./jenkins/
+    image: jenkins
+    ports:
+      - "8080:8080"
+    networks:
+      - jenkins
+    volumes:
+      - jenkins_data:/var/jenkins_home
+
+networks:
+  jenkins:
+    driver: bridge
+
+volumes:
+  jenkins_data:
