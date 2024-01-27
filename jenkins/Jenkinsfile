@@ -2,23 +2,21 @@ pipeline {
     agent any
 
     stages {
-        stage('Build') {
+        stage('Clone') {
             steps {
                 checkout scm
-                echo 'Building..'
             }
         }
 
-        stage('Test') {
+        stage('SonarQube') {
             steps {
-                echo 'Testing..'
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                echo 'Deploying....'
+                script { scannerPath = tool 'SonarQube Scanner' }
+                withSonarQubeEnv('SonarQube') {
+                    sh "${scannerPath}/bin/sonar-scanner -Dsonar.projectKey=sonarqube"
+                }
             }
         }
     }
 }
+
+
