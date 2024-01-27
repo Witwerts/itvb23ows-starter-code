@@ -27,14 +27,13 @@ services:
 
   sonarqube:
     image: sonarqube:latest
+    container_name: sonarqube
     ports:
       - "9000:9000"
     networks:
       - jenkins
     volumes:
       - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_data:/opt/sonarqube/logs
-      - sonarqube_data:/opt/sonarqube/temp
 
 networks:
   jenkins:
@@ -43,5 +42,3 @@ networks:
 volumes:
   sonarqube_data:
   jenkins_data:
-
-  
