@@ -15,7 +15,9 @@
     foreach ($GLOBALS['OFFSETS'] as $pq) {
         foreach (array_keys($board) as $pos) {
             $pq2 = explode(',', $pos);
-            $to[] = ($pq[0] + $pq2[0]).','.($pq[1] + $pq2[1]);
+            $newPos = ($pq[0] + $pq2[0]).','.($pq[1] + $pq2[1]);
+
+            $to[] = $newPos;
         }
     }
     $to = array_unique($to);
@@ -135,6 +137,10 @@
             <select name="to">
                 <?php
                     foreach ($to as $pos) {
+                        if(isset($board[$pos]) || (count($board) && !hasNeighBour($pos, $board))){
+                            continue;
+                        }
+
                         echo "<option value=\"$pos\">$pos</option>";
                     }
                 ?>
@@ -145,6 +151,9 @@
             <select name="from">
                 <?php
                     foreach (array_keys($board) as $pos) {
+                        if($board[$pos][count($board[$pos])-1][0] != $player)
+                            continue;
+                        
                         echo "<option value=\"$pos\">$pos</option>";
                     }
                 ?>
