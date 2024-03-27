@@ -42,7 +42,7 @@ else {
         } else {
             if ($from == $to) $_SESSION['error'] = 'Tile must move';
             elseif (isset($board[$to]) && $tile[1] != "B") $_SESSION['error'] = 'Tile not empty';
-            elseif ($tile[1] == "Q" || $tile[1] == "B") {
+            elseif ($tile[1] == "B") {
                 if (!slide($board, $from, $to))
                     $_SESSION['error'] = 'Tile must slide';
             }
