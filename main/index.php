@@ -129,8 +129,13 @@
         <form method="post" action="play.php">
             <select name="piece">
                 <?php
-                    foreach ($hand[$player] as $tile => $ct) {
-                        echo "<option value=\"$tile\">$tile</option>";
+                    if(array_sum($hand[$player]) <= 8 && array_key_exists("Q", $hand[$player])){
+                        echo "<option value='Q'>Q</option>";
+                    }
+                    else {
+                        foreach ($hand[$player] as $tile => $ct) {
+                            echo "<option value=\"$tile\">$tile</option>";
+                        }
                     }
                 ?>
             </select>
