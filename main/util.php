@@ -50,4 +50,52 @@ function slide($board, $from, $to) {
     return min(len($m), len($n)) <= max(len($f), len($t));
 }
 
+function moveGrasshopper($board, $from, $to){
+    //a. Een sprinkhaan verplaatst zich door in een rechte lijn een sprong te maken 
+        //naar een veld meteen achter een andere steen in de richting van de sprong. 
+    //b. Een sprinkhaan mag zich niet verplaatsen naar het veld waar hij al staat. 
+    //c. Een sprinkhaan moet over minimaal één steen springen.
+    //d. Een sprinkhaan mag niet naar een bezet veld springen.
+    //e. Een sprinkhaan mag niet over lege velden springen. Dit betekent dat alle
+        //velden tussen de start- en eindpositie bezet moeten zijn. 
+
+    if($from == $to){
+        $_SESSION['error'] = 'Tile must move';
+        return false;
+    }
+
+    $fromPos = explode(',', $from);
+    $toPos = explode(',', $to);
+
+    $dx = ($toPos[0] - $fromPos[0]);
+    $dy = ($toPos[1] - $fromPos[1]);
+
+    if((($dx > 1 && $dy < -1) //rechtsboven
+        || ($dx == 0 && $dy > 1) //rechtsonder
+        || ($dx < -1 && $dy > 1) //linksonder
+        || ($dx == 0 && $dy < -1))) //linksboven
+        return false;
+
+    if(isset($board[$to]))
+        return false;
+
+    $dx = max(-1, min($dx, 1));
+    $dy = max(-1, min($dy, 1));
+
+    $nx = $fromPos[0] + $dx;
+    $ny = $fromPos[1] + $dy;
+    $jumped = false;
+
+    while(isset($board[$nx.",".$ny])){
+        $nx += $dx;
+        $ny += $dy;
+
+        $jumped = true;
+    }
+
+    $nPos = $nx.",".$ny;
+
+    return $jumped && $to == $nPos;
+}
+
 ?>
