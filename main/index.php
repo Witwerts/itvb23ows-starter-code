@@ -11,17 +11,7 @@
     $player = $_SESSION['player'];
     $hand = $_SESSION['hand'];
 
-    $to = [];
-    foreach ($GLOBALS['OFFSETS'] as $pq) {
-        foreach (array_keys($board) as $pos) {
-            $pq2 = explode(',', $pos);
-            $newPos = ($pq[0] + $pq2[0]).','.($pq[1] + $pq2[1]);
-
-            $to[] = $newPos;
-        }
-    }
-    $to = array_unique($to);
-    if (!count($to)) $to[] = '0,0';
+    $to = getPossibleMoves($board);
 ?>
 <!DOCTYPE html>
 <html>

@@ -66,5 +66,21 @@
 
             $this->assertFalse(moveGrasshopper($board, '-1,0', '2,0'));
         }
+
+        //Feature 2: soldier ant
+        public function testSoldierantMovement(){
+            $board = [
+                '0,0' => [[0, 'Q']],
+                '0,1' => [[1, 'Q']],
+                '-1,0' => [[0, 'S']],
+                '1,1' => [[1, 'S']],
+                '-2,0' => [[0, 'A']],
+                '2,1' => [[1, 'A']],
+                '-3,0' => [[0, 'G']],
+                '3,1' => [[1, 'G']],
+            ];
+
+            $this->assertFalse(moveSoldierAnt($board, '-2,0', '-1,1'));
+        }
     }
 ?>

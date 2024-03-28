@@ -50,6 +50,57 @@ function slide($board, $from, $to) {
     return min(len($m), len($n)) <= max(len($f), len($t));
 }
 
+function getPossibleMoves($board, $emptyOnly = false){
+    $to = [];
+
+    if(!empty($board)){
+        foreach ($GLOBALS['OFFSETS'] as $pq) {
+            foreach (array_keys($board) as $pos) {
+                $pq2 = explode(',', $pos);
+                $newPos = ($pq[0] + $pq2[0]).','.($pq[1] + $pq2[1]);
+
+                if(!$emptyOnly || ($emptyOnly && !isset($newPos)))
+                    $to[] = $newPos;
+            }
+        }
+    }
+    else
+        $to[] = '0,0';
+
+    $to = array_unique($to);
+
+    return $to;
+}
+
+function splitsHive($board, $to){
+    if (!hasNeighBour($to, $board)){
+        $_SESSION['error'] = "Move would split hive";
+        return true;
+    }
+    else {
+        $all = array_keys($board);
+        $queue = [array_shift($all)];
+        while ($queue) {
+            $next = explode(',', array_shift($queue));
+            foreach ($GLOBALS['OFFSETS'] as $pq) {
+                list($p, $q) = $pq;
+                $p += $next[0];
+                $q += $next[1];
+                if (in_array("$p,$q", $all)) {
+                    $queue[] = "$p,$q";
+                    $all = array_diff($all, ["$p,$q"]);
+                }
+            }
+        }
+        if ($all){
+            $_SESSION['error'] = "Move would split hive";
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function moveGrasshopper($board, $from, $to){
     //a. Een sprinkhaan verplaatst zich door in een rechte lijn een sprong te maken 
         //naar een veld meteen achter een andere steen in de richting van de sprong. 
@@ -96,6 +147,23 @@ function moveGrasshopper($board, $from, $to){
     $nPos = $nx.",".$ny;
 
     return $jumped && $to == $nPos;
+}
+
+function moveSoldierAnt($board, $from, $to){
+    //a. Een soldatenmier verplaatst zich door een onbeperkt aantal keren te
+        //verschuiven
+    //b. Een verschuiving is een zet zoals de bijenkoningin die mag maken 
+    //c. Een soldatenmier mag zich niet verplaatsen naar het veld waar hij al staat. 
+    //d. Een soldatenmier mag alleen verplaatst worden over en naar lege velden. 
+
+    if($from == $to){
+        $_SESSION['error'] = 'Tile must move';
+        return false;
+    }
+
+    $emptyTiles = getPossibleMoves($board, true);
+
+    return array_key_exists($to, $emptyTiles) && !splitsHive($board, $to);
 }
 
 ?>
