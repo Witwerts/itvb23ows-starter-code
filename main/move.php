@@ -61,6 +61,9 @@ else {
         $stmt->bind_param('issis', $_SESSION['game_id'], $from, $to, $_SESSION['last_move'], $state);
         $stmt->execute();
         $_SESSION['last_move'] = $db->insert_id;
+
+        if(empty($board[$from]))
+            unset($board[$from]);
     }
     $_SESSION['board'] = $board;
 }
