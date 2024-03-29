@@ -15,6 +15,12 @@ services:
     ports:
       - "3306:3306"
 
+  ai-container:
+    build:
+      context: .
+    ports:
+      - "5000:5000"
+
   jenkins:
     build: ./jenkins/
     image: jenkins
