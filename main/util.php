@@ -72,9 +72,10 @@ function getPossibleMoves($board, $emptyOnly = false){
     return $to;
 }
 
-function splitsHive($board, $to){
+function splitsHive($board, $to, $showError = false){
     if (!hasNeighBour($to, $board)){
-        $_SESSION['error'] = "Move would split hive";
+        if($showError)
+            $_SESSION['error'] = "Move would split hive";
         return true;
     }
     else {
@@ -93,7 +94,9 @@ function splitsHive($board, $to){
             }
         }
         if ($all){
-            $_SESSION['error'] = "Move would split hive";
+            if($showError)
+                $_SESSION['error'] = "Move would split hive";
+
             return true;
         }
     }
@@ -194,7 +197,95 @@ function gameOver($board, $currPlayer, $turn){
     return false;
 }
 
-function moveGrasshopper($board, $from, $to){
+function switchTurn(){
+    $_SESSION['player'] = getNextPlayer($_SESSION['player']);
+}
+
+function getNextPlayer($player){
+    return 1-$player;
+}
+
+function updateMove(&$board, $pos, $tile){
+    if (isset($board[$pos])) array_push($board[$pos], $tile);
+    else $board[$pos] = [$tile];
+
+    if(empty($board[$pos]))
+        unset($board[$pos]);
+}
+
+function moveBeetle($board, $from, $to, $showError = false){
+    if(splitsHive($board, $to))
+        return false;
+
+    if (!slide($board, $from, $to)){
+        if($showError)
+            $_SESSION['error'] = 'Tile must slide';
+        return false;
+    }
+
+    return true;
+}
+
+function moveQueen($board, $from, $to, $showError = false){
+    if(isset($board[$to])){
+        if($showError)
+            $_SESSION['error'] = 'Tile not empty';
+
+        return false;
+    }
+
+    if(splitsHive($board, $to, $showError))
+        return false;
+
+    if(!isNeighbour($from, $to)){
+        if($showError)
+            $_SESSION['error'] = 'Board position is not a neightbour';
+
+        return false;
+    }
+
+    return true;
+}
+
+function tryMove($board, $from, $to, $tile, $showError = false){
+    if($from == $to){
+        if($showError)
+            $_SESSION['error'] = 'Tile must move';
+    }
+    else if(!splitsHive($board, $to, $showError)){
+        switch($tile){
+            case "S":
+                if(moveSpider($board, $from, $to, $showError))
+                    return true;
+    
+                break;
+            case "A":
+                if(moveSoldierAnt($board, $from, $to, $showError))
+                    return true;
+    
+                break;
+            case "G":
+                if(moveGrasshopper($board, $from, $to, $showError))
+                    return true;
+    
+                break;
+            case "B":
+                if(moveBeetle($board, $from, $to, $showError))
+                    return true;
+    
+                break;
+            case "Q":
+                if(moveQueen($board, $from, $to, $showError))
+                    return true;
+
+                break;
+        }
+    }
+
+    return false;
+}
+
+function moveGrasshopper($board, $from, $to, $showError = false){
     //a. Een sprinkhaan verplaatst zich door in een rechte lijn een sprong te maken 
         //naar een veld meteen achter een andere steen in de richting van de sprong. 
     //b. Een sprinkhaan mag zich niet verplaatsen naar het veld waar hij al staat. 
@@ -203,8 +294,17 @@ function moveGrasshopper($board, $from, $to){
     //e. Een sprinkhaan mag niet over lege velden springen. Dit betekent dat alle
         //velden tussen de start- en eindpositie bezet moeten zijn. 
 
+    if(isset($board[$to])){
+        if($showError)
+            $_SESSION['error'] = 'Tile not empty';
+
+        return false;
+    }
+
     if($from == $to){
-        $_SESSION['error'] = 'Tile must move';
+        if($showError)
+            $_SESSION['error'] = 'Tile must move';
+
         return false;
     }
 
@@ -242,7 +342,7 @@ function moveGrasshopper($board, $from, $to){
     return $jumped && $to == $nPos;
 }
 
-function moveSoldierAnt($board, $from, $to){
+function moveSoldierAnt($board, $from, $to, $showError = false){
     //a. Een soldatenmier verplaatst zich door een onbeperkt aantal keren te
         //verschuiven
     //b. Een verschuiving is een zet zoals de bijenkoningin die mag maken 
@@ -250,7 +350,9 @@ function moveSoldierAnt($board, $from, $to){
     //d. Een soldatenmier mag alleen verplaatst worden over en naar lege velden. 
 
     if($from == $to){
-        $_SESSION['error'] = 'Tile must move';
+        if($showError)
+            $_SESSION['error'] = 'Tile must move';
+
         return false;
     }
 
@@ -259,7 +361,7 @@ function moveSoldierAnt($board, $from, $to){
     return array_key_exists($to, $emptyTiles) && !splitsHive($board, $to);
 }
 
-function moveSpider($board, $from, $to){
+function moveSpider($board, $from, $to, $showError = false){
     //a: Een spin verplaatst zich door precies drie keer te verschuiven.
     //b. Een verschuiving is een zet zoals de bijenkoningin die mag maken.
     //c. Een spin mag zich niet verplaatsen naar het veld waar hij al staat. 
@@ -268,7 +370,9 @@ function moveSpider($board, $from, $to){
         //tijdens de verplaatsing al is geweest.
 
     if($from == $to){
-        $_SESSION['error'] = 'Tile must move';
+        if($showError)
+            $_SESSION['error'] = 'Tile must move';
+        
         return false;
     }
 
@@ -289,30 +393,8 @@ function canMove($board, $player){
             continue;
 
         foreach($emptyTiles as $to){
-            switch($tile[$tileSize-1][1]){
-                case "S":
-                    if(moveSpider($board, $from, $to))
-                        return true;
-
-                    break;
-                case "A":
-                    if(moveSoldierAnt($board, $from, $to))
-                        return true;
-
-                    break;
-                case "G":
-                    if(moveGrasshopper($board, $from, $to))
-                        return true;
-
-                    break;
-                case "B":
-                    if(!splitsHive($board, $to) && slide($board, $from, $to))
-                        return true;
-
-                    break;
-                case "Q":
-                    return true;
-            }
+            if(tryMove($board, $from, $to, $tile[$tileSize-1][1]))
+                return true;
         }
     }
 
