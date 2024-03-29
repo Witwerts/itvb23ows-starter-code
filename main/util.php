@@ -59,7 +59,7 @@ function getPossibleMoves($board, $emptyOnly = false){
                 $pq2 = explode(',', $pos);
                 $newPos = ($pq[0] + $pq2[0]).','.($pq[1] + $pq2[1]);
 
-                if(!$emptyOnly || ($emptyOnly && !isset($newPos)))
+                if(!$emptyOnly || ($emptyOnly && !isset($board[$newPos])))
                     $to[] = $newPos;
             }
         }
@@ -99,6 +99,43 @@ function splitsHive($board, $to){
     }
 
     return false;
+}
+
+function findPaths($emptyTiles, $pos, $end, &$visited, $path, &$allPaths, $length = 0){
+    list($x, $y) = explode(",", $pos);
+
+    if ($pos === $end && ($length == 0 || count($path) == ($length+1))) {
+        $allPaths[] = $path;
+        return;
+    }
+
+    if ($length > 0 && count($path) > $length) {
+        return;
+    }
+
+    $directions = $GLOBALS['OFFSETS'];
+
+    foreach ($directions as $dir) {
+        $newX = $x + $dir[0];
+        $newY = $y + $dir[1];
+        $newPos = $newX.",".$newY;
+
+        if (in_array($newPos, $emptyTiles) && !isset($visited[$newPos])){
+            $visited[$newPos] = true;
+            findPaths($emptyTiles, $newPos, $end, $visited, array_merge($path, [$newPos]), $allPaths, $length);
+            unset($visited[$newPos]);
+        }
+    }
+}
+
+function getAllPaths($emptyTiles, $start, $end, $length = 0) {
+    $visited = [];
+    $allPaths = [];
+    $visited[$start] = true;
+
+    findPaths($emptyTiles, $start, $end, $visited, [$start], $allPaths, $length);
+
+    return $allPaths;
 }
 
 function moveGrasshopper($board, $from, $to){
@@ -164,6 +201,26 @@ function moveSoldierAnt($board, $from, $to){
     $emptyTiles = getPossibleMoves($board, true);
 
     return array_key_exists($to, $emptyTiles) && !splitsHive($board, $to);
+}
+
+function moveSpider($board, $from, $to){
+    //a: Een spin verplaatst zich door precies drie keer te verschuiven.
+    //b. Een verschuiving is een zet zoals de bijenkoningin die mag maken.
+    //c. Een spin mag zich niet verplaatsen naar het veld waar hij al staat. 
+    //d. Een spin mag alleen verplaatst worden over en naar lege velden.
+    //e. Een spin mag tijdens zijn verplaatsing geen stap maken naar een veld waar hij
+        //tijdens de verplaatsing al is geweest.
+
+    if($from == $to){
+        $_SESSION['error'] = 'Tile must move';
+        return false;
+    }
+
+    $emptyTiles = getPossibleMoves($board, true);
+
+    $possiblePaths = getAllPaths($emptyTiles, $from, $to, 3);
+
+    return !empty($possiblePaths);
 }
 
 ?>
