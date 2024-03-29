@@ -247,6 +247,22 @@ function moveQueen($board, $from, $to, $showError = false){
     return true;
 }
 
+function tryPlay($player, $board, $hand, $to, $piece){
+    if (!isset($hand[$piece]))
+        $_SESSION['error'] = "Player does not have tile";
+    elseif (isset($board[$to]))
+        $_SESSION['error'] = 'Board position is not empty';
+    elseif (count($board) && !hasNeighBour($to, $board))
+        $_SESSION['error'] = "board position has no neighbour";
+    elseif (array_sum($hand) < 11 && !neighboursAreSameColor($player, $to, $board))
+        $_SESSION['error'] = "Board position has opposing neighbour";
+    elseif (array_sum($hand) <= 8 && isset($hand['Q'])) {
+        $_SESSION['error'] = 'Must play queen bee';
+    }
+
+    return isset($_SESSION['error']);
+}
+
 function tryMove($board, $from, $to, $tile, $showError = false){
     if($from == $to){
         if($showError)
