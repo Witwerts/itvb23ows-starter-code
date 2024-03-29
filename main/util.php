@@ -138,6 +138,62 @@ function getAllPaths($emptyTiles, $start, $end, $length = 0) {
     return $allPaths;
 }
 
+function findTile($board, $player, $tile){
+    foreach ($board as $pos => $t){
+        $tileSize = count($t);
+
+        if($t[$tileSize-1][0] == $player && $t[$tileSize-1][1] == $tile)
+            return $pos;
+    }
+
+    return null;
+}
+
+function isSurrounded($board, $player, $tile){
+    $pos = findTile($board, $player, $tile);
+
+    if(!is_null($pos)){
+        $pq2 = explode(',', $pos);
+
+        foreach ($GLOBALS['OFFSETS'] as $pq) {
+            $newPos = ($pq[0] + $pq2[0]).','.($pq[1] + $pq2[1]);
+
+            if(!isset($board[$newPos]))
+                return false;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+function gameOver($board, $currPlayer, $turn){
+    $opponent = 1 - $turn;
+
+    $q1 = isSurrounded($board, $turn, 'Q');
+    $q2 = isSurrounded($board, $opponent, 'Q');
+
+    if($q1 || $q2){
+        if($q1 && $q2){
+            fwrite(STDERR, "GELIJKSPEL! \n");
+            $_SESSION["error"] = "Gelijkspel!";
+        }
+        else if($currPlayer == $turn){
+            fwrite(STDERR, "GEWONNEN! \n");
+            $_SESSION["error"] = "Gewonnen!";
+        }
+        else {
+            fwrite(STDERR, "VERLOREN! \n");
+            $_SESSION["error"] = "Verloren!";
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 function moveGrasshopper($board, $from, $to){
     //a. Een sprinkhaan verplaatst zich door in een rechte lijn een sprong te maken 
         //naar een veld meteen achter een andere steen in de richting van de sprong. 
