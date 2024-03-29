@@ -99,5 +99,21 @@
             $this->assertFalse(moveSpider($board, '-1,0', '0,1'));
             $this->assertTrue(moveSpider($board, '-1,0', '-3,-1'));
         }
+
+        //Feature 4: pass if there is no moves possible
+        public function testPass(){
+            $board = [
+                '0,0' => [[0, 'Q']],
+                '0,1' => [[1, 'Q']],
+                '-1,0' => [[0, 'S']],
+                '1,1' => [[1, 'S']],
+                '-2,0' => [[0, 'A']],
+                '2,1' => [[1, 'A']],
+                '-3,0' => [[0, 'G']],
+                '3,1' => [[1, 'G']],
+            ];
+
+            $this->assertTrue(canMove($board, 0));
+        }
     }
 ?>

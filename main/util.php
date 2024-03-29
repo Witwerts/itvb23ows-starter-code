@@ -223,4 +223,44 @@ function moveSpider($board, $from, $to){
     return !empty($possiblePaths);
 }
 
+function canMove($board, $player){
+    $emptyTiles = getPossibleMoves($board, true);
+
+    foreach($board as $from => $tile){
+        $tileSize = count($tile);
+
+        if($tile[$tileSize-1][0] != $player)
+            continue;
+
+        foreach($emptyTiles as $to){
+            switch($tile[$tileSize-1][1]){
+                case "S":
+                    if(moveSpider($board, $from, $to))
+                        return true;
+
+                    break;
+                case "A":
+                    if(moveSoldierAnt($board, $from, $to))
+                        return true;
+
+                    break;
+                case "G":
+                    if(moveGrasshopper($board, $from, $to))
+                        return true;
+
+                    break;
+                case "B":
+                    if(!splitsHive($board, $to) && slide($board, $from, $to))
+                        return true;
+
+                    break;
+                case "Q":
+                    return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 ?>

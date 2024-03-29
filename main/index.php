@@ -163,7 +163,7 @@
             <input type="submit" value="Move">
         </form>
         <form method="post" action="pass.php">
-            <input type="submit" value="Pass">
+            <input type="submit" value="Pass" <?php if(canMove($board, $player)) echo "disabled"; ?>>
         </form>
         <form method="post" action="restart.php">
             <input type="submit" value="Restart">
