@@ -389,6 +389,38 @@ function tryPass($player){
     return !isset($_SESSION['error']);
 }
 
+function tryUndo(){
+    global $db;
+
+    if(isset($_SESSION['last_move'])){
+        $stmt = $db->prepare('SELECT * FROM moves WHERE id = '.$_SESSION['last_move']);
+        $stmt->execute();
+        $currMove = $stmt->get_result()->fetch_array();
+    
+        if(!empty($currMove)){
+            $db->prepare('DELETE FROM moves where id = '.$currMove["id"])->execute();
+            $prevId = $currMove["previous_id"];
+    
+            if(!is_null($prevId)){
+                $stmt = $db->prepare('SELECT * FROM moves WHERE id = '.$prevId);
+                $stmt->execute();
+                $oldMove = $stmt->get_result()->fetch_array();
+        
+                $_SESSION['last_move'] = $prevId;
+    
+                if(!empty($oldMove))
+                    set_state($oldMove["state"]);
+            }
+            else {
+                header('Location: restart.php');
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 function moveGrasshopper($board, $from, $to, $showError = false){
     //a. Een sprinkhaan verplaatst zich door in een rechte lijn een sprong te maken 
         //naar een veld meteen achter een andere steen in de richting van de sprong. 
