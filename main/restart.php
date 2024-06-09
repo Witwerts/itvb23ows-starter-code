@@ -7,7 +7,7 @@ $_SESSION['hand'] = [0 => ["Q" => 1, "B" => 2, "S" => 2, "A" => 3, "G" => 3], 1 
 $_SESSION['player'] = 0;
 
 //enable to play against AI (after restart)
-$_SESSION["ai"] = true;
+$_SESSION["ai"] = false;
 
 unset($_SESSION["last_move"]);
 

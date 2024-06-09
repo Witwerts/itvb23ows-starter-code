@@ -318,18 +318,27 @@ function tryMove($player, $from, $to){
 
     $board = $_SESSION['board'];
     $hand = $_SESSION['hand'][$player];
-    $tile = array_pop($board[$from]);
 
-    if (!checkMove($board, $from, $to, $tile[1], true) || isset($_SESSION['error']))
-        updateMove($board, $from, $tile);
+    if (!isset($board[$from]))
+        $_SESSION['error'] = 'Board position is empty';
+    else if ($board[$from][count($board[$from])-1][0] != $player)
+        $_SESSION['error'] = "Tile is not owned by player";
+    else if (isset($hand['Q']))
+        $_SESSION['error'] = "Queen bee is not played";
     else {
-        updateMove($board, $to, $tile);
-        $state = get_state();
-        $stmt = $db->prepare('insert into moves (game_id, type, move_from, move_to, previous_id, state) values (?, "move", ?, ?, ?, ?)');
-        $stmt->bind_param('issis', $_SESSION['game_id'], $from, $to, $_SESSION['last_move'], $state);
-        $stmt->execute();
+        $tile = array_pop($board[$from]);
 
-        $_SESSION['last_move'] = $db->insert_id;
+        if (!checkMove($board, $player, $from, $to, $tile[1], true) || isset($_SESSION['error']))
+            updateMove($board, $from, $tile);
+        else {
+            updateMove($board, $to, $tile);
+            $state = get_state();
+            $stmt = $db->prepare('insert into moves (game_id, type, move_from, move_to, previous_id, state) values (?, "move", ?, ?, ?, ?)');
+            $stmt->bind_param('issis', $_SESSION['game_id'], $from, $to, $_SESSION['last_move'], $state);
+            $stmt->execute();
+
+            $_SESSION['last_move'] = $db->insert_id;
+        }
     }
 
     $_SESSION['board'] = $board;
@@ -337,14 +346,8 @@ function tryMove($player, $from, $to){
     return !isset($_SESSION['error']);
 }
 
-function checkMove($board, $player, $from, $to, $tile, $showError = false){    
-    if (!isset($board[$from]))
-        $_SESSION['error'] = 'Board position is empty';
-    else if ($board[$from][count($board[$from])-1][0] != $player)
-        $_SESSION['error'] = "Tile is not owned by player";
-    else if (isset($hand['Q']))
-        $_SESSION['error'] = "Queen bee is not played";
-    else if($from == $to){
+function checkMove($board, $player, $from, $to, $tile, $showError = false){
+    if($from == $to){
         $_SESSION['error'] = 'Tile must move';
     }
     else if(!splitsHive($board, $to, $showError) && !isset($_SESSION['error'])){
@@ -490,7 +493,7 @@ function canMove($board, $player){
     foreach($board as $from => $tile){
         $tileSize = count($tile);
 
-        if($tile[$tileSize-1][0] != $player)
+        if($tileSize == 0 || $tile[$tileSize-1][0] != $player)
             continue;
 
         foreach($emptyTiles as $to){
@@ -503,7 +506,6 @@ function canMove($board, $player){
 }
 
 function moveAI(){
-
     $moveId = getMoves()->num_rows ?? 1;
     $board = $_SESSION["board"];
     $hand = $_SESSION["hand"];
