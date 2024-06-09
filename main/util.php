@@ -337,7 +337,7 @@ function tryMove($player, $from, $to){
     return !isset($_SESSION['error']);
 }
 
-function checkMove($board, $player, $from, $to, $tile, $save = false, $showError = false){    
+function checkMove($board, $player, $from, $to, $tile, $showError = false){    
     if (!isset($board[$from]))
         $_SESSION['error'] = 'Board position is empty';
     else if ($board[$from][count($board[$from])-1][0] != $player)
@@ -345,8 +345,7 @@ function checkMove($board, $player, $from, $to, $tile, $save = false, $showError
     else if (isset($hand['Q']))
         $_SESSION['error'] = "Queen bee is not played";
     else if($from == $to){
-        if($showError)
-            $_SESSION['error'] = 'Tile must move';
+        $_SESSION['error'] = 'Tile must move';
     }
     else if(!splitsHive($board, $to, $showError) && !isset($_SESSION['error'])){
         switch($tile){
