@@ -1,5 +1,6 @@
 <?php
 
+$db = include 'database.php';
 $GLOBALS['OFFSETS'] = [[0, 1], [0, -1], [1, 0], [-1, 0], [-1, 1], [1, -1]];
 
 function isNeighbour($a, $b) {
@@ -28,6 +29,15 @@ function neighboursAreSameColor($player, $a, $board) {
 
 function len($tile) {
     return $tile ? count($tile) : 0;
+}
+
+function getMoves(){
+    global $db;
+
+    $stmt = $db->prepare('SELECT * FROM moves WHERE game_id = '.$_SESSION['game_id']);
+    $stmt->execute();
+
+    return $stmt->get_result();
 }
 
 function slide($board, $from, $to) {
@@ -199,6 +209,9 @@ function gameOver($board, $currPlayer, $turn){
 
 function switchTurn(){
     $_SESSION['player'] = getNextPlayer($_SESSION['player']);
+
+    if($_SESSION["player"] != 0 && isset($_SESSION["ai"]) && $_SESSION["ai"])
+        moveAI();
 }
 
 function getNextPlayer($player){
@@ -206,8 +219,10 @@ function getNextPlayer($player){
 }
 
 function updateMove(&$board, $pos, $tile){
-    if (isset($board[$pos])) array_push($board[$pos], $tile);
-    else $board[$pos] = [$tile];
+    if (isset($board[$pos]))
+        array_push($board[$pos], $tile);
+    else
+        $board[$pos] = [$tile];
 
     if(empty($board[$pos]))
         unset($board[$pos]);
@@ -247,7 +262,42 @@ function moveQueen($board, $from, $to, $showError = false){
     return true;
 }
 
-function tryPlay($player, $board, $hand, $to, $piece){
+function tryPlay($player, $piece, $to){
+    global $db;
+
+    $board = $_SESSION['board'];
+    $hand = $_SESSION['hand'][$player];
+
+    if (!isset($hand[$piece]))
+        $_SESSION['error'] = "Player does not have tile";
+    elseif (isset($board[$to]))
+        $_SESSION['error'] = 'Board position is not empty';
+    elseif (count($board) && !hasNeighBour($to, $board))
+        $_SESSION['error'] = "board position has no neighbour";
+    elseif (array_sum($hand) < 11 && !neighboursAreSameColor($player, $to, $board))
+        $_SESSION['error'] = "Board position has opposing neighbour";
+    elseif (array_sum($hand) <= 8 && isset($hand['Q'])) {
+        $_SESSION['error'] = 'Must play queen bee';
+    } else {
+        $_SESSION['board'][$to] = [[$_SESSION['player'], $piece]];
+        $_SESSION['hand'][$player][$piece]--;
+
+        $state = get_state();
+        $stmt = $db->prepare('insert into moves (game_id, type, move_from, move_to, previous_id, state) values (?, "play", ?, ?, ?, ?)');
+        $stmt->bind_param('issis', $_SESSION['game_id'], $piece, $to, $_SESSION['last_move'], $state);
+        $stmt->execute();
+
+        if($_SESSION['hand'][$player][$piece] <= 0){
+            unset($_SESSION['hand'][$player][$piece]);
+        }
+
+        $_SESSION['last_move'] = $db->insert_id;
+    }
+
+    return !isset($_SESSION['error']);
+}
+
+function checkPlay($player, $board, $hand, $to, $piece){
     if (!isset($hand[$piece]))
         $_SESSION['error'] = "Player does not have tile";
     elseif (isset($board[$to]))
@@ -260,45 +310,81 @@ function tryPlay($player, $board, $hand, $to, $piece){
         $_SESSION['error'] = 'Must play queen bee';
     }
 
-    return isset($_SESSION['error']);
+    return !isset($_SESSION['error']);
 }
 
-function tryMove($board, $from, $to, $tile, $showError = false){
-    if($from == $to){
+function tryMove($player, $from, $to){
+    global $db;
+
+    $board = $_SESSION['board'];
+    $hand = $_SESSION['hand'][$player];
+    $tile = array_pop($board[$from]);
+
+    if (!checkMove($board, $from, $to, $tile[1], true) || isset($_SESSION['error']))
+        updateMove($board, $from, $tile);
+    else {
+        updateMove($board, $to, $tile);
+        $state = get_state();
+        $stmt = $db->prepare('insert into moves (game_id, type, move_from, move_to, previous_id, state) values (?, "move", ?, ?, ?, ?)');
+        $stmt->bind_param('issis', $_SESSION['game_id'], $from, $to, $_SESSION['last_move'], $state);
+        $stmt->execute();
+
+        $_SESSION['last_move'] = $db->insert_id;
+    }
+
+    $_SESSION['board'] = $board;
+
+    return !isset($_SESSION['error']);
+}
+
+function checkMove($board, $player, $from, $to, $tile, $save = false, $showError = false){    
+    if (!isset($board[$from]) || empty($board[$from]))
+        $_SESSION['error'] = 'Board position is empty';
+    else if ($board[$from][count($board[$from])-1][0] != $player)
+        $_SESSION['error'] = "Tile is not owned by player";
+    else if (isset($hand['Q']))
+        $_SESSION['error'] = "Queen bee is not played";
+    else if($from == $to){
         if($showError)
             $_SESSION['error'] = 'Tile must move';
     }
-    else if(!splitsHive($board, $to, $showError)){
+    else if(!splitsHive($board, $to, $showError) && !isset($_SESSION['error'])){
         switch($tile){
             case "S":
-                if(moveSpider($board, $from, $to, $showError))
-                    return true;
-    
+                moveSpider($board, $from, $to, $showError);
                 break;
             case "A":
-                if(moveSoldierAnt($board, $from, $to, $showError))
-                    return true;
-    
+                moveSoldierAnt($board, $from, $to, $showError);
                 break;
             case "G":
-                if(moveGrasshopper($board, $from, $to, $showError))
-                    return true;
-    
+                moveGrasshopper($board, $from, $to, $showError);
                 break;
             case "B":
-                if(moveBeetle($board, $from, $to, $showError))
-                    return true;
-    
+                moveBeetle($board, $from, $to, $showError);
                 break;
             case "Q":
-                if(moveQueen($board, $from, $to, $showError))
-                    return true;
-
+                moveQueen($board, $from, $to, $showError);
                 break;
         }
     }
 
-    return false;
+    return !isset($_SESSION['error']);
+}
+
+function tryPass($player){
+    global $db;
+
+    $board = $_SESSION['board'];
+
+    if(isset($board) && !canMove($board, $player)){
+        $state = get_state();
+        $stmt = $db->prepare('insert into moves (game_id, type, move_from, move_to, previous_id, state) values (?, "pass", null, null, ?, ?)');
+        $stmt->bind_param('iis', $_SESSION['game_id'], $_SESSION['last_move'], $state);
+        $stmt->execute();
+        $_SESSION['last_move'] = $db->insert_id;
+    }
+
+    return !isset($_SESSION['error']);
 }
 
 function moveGrasshopper($board, $from, $to, $showError = false){
@@ -409,12 +495,76 @@ function canMove($board, $player){
             continue;
 
         foreach($emptyTiles as $to){
-            if(tryMove($board, $from, $to, $tile[$tileSize-1][1]))
+            if(checkMove($board, $player, $from, $to, $tile[$tileSize-1][1]))
                 return true;
         }
     }
 
     return false;
+}
+
+function moveAI(){
+
+    $moveId = getMoves()->num_rows ?? 1;
+    $board = $_SESSION["board"];
+    $hand = $_SESSION["hand"];
+
+    $url = "http://host.docker.internal:5000/";
+    $data = [
+        "move_number" => $moveId,
+        "hand" => $hand,
+        "board" => $board,
+    ];
+
+    $options = [
+        'http' => [
+            'header'  => "Content-Type: application/json\r\n",
+            'method'  => 'POST',
+            'content' => json_encode($data),
+        ],
+    ];
+
+    $context  = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
+
+    if ($result === FALSE) {
+        $error = error_get_last();
+
+        echo "HTTP request failed. Error was: " . $error['message'];
+        die();
+    }
+
+    $response = json_decode($result, true);
+    $state = $response[0];
+
+    switch($state){
+        case "play":
+            $tile = $response[1];
+            $pos = $response[2];
+
+            if(tryPlay(1, $tile, $pos)){
+                switchTurn();
+            }
+
+            break;
+        case "move":
+            $from = $response[1];
+            $to = $response[2];
+
+            if(tryMove(1, $from, $to))
+                switchTurn();
+
+            break;
+        case "pass":
+            if(tryPass(1))
+                switchTurn();
+
+            break;
+    }
+
+    if(isset($_SESSION["error"])){
+        $_SESSION["error"] = "invalid movement from AI: [" . implode(',', $response) . "])";
+    }
 }
 
 ?>

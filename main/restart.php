@@ -6,6 +6,9 @@ $_SESSION['board'] = [];
 $_SESSION['hand'] = [0 => ["Q" => 1, "B" => 2, "S" => 2, "A" => 3, "G" => 3], 1 => ["Q" => 1, "B" => 2, "S" => 2, "A" => 3, "G" => 3]];
 $_SESSION['player'] = 0;
 
+//enable to play against AI (after restart)
+$_SESSION["ai"] = true;
+
 unset($_SESSION["last_move"]);
 
 $db = include_once 'database.php';
