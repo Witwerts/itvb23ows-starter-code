@@ -338,7 +338,7 @@ function tryMove($player, $from, $to){
 }
 
 function checkMove($board, $player, $from, $to, $tile, $save = false, $showError = false){    
-    if (!isset($board[$from]) || empty($board[$from]))
+    if (!isset($board[$from]))
         $_SESSION['error'] = 'Board position is empty';
     else if ($board[$from][count($board[$from])-1][0] != $player)
         $_SESSION['error'] = "Tile is not owned by player";
